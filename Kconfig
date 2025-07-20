@@ -198,7 +198,7 @@ source "src/memory/Kconfig"
 source "src/device/Kconfig"
 endif
 
-
+  
 menu "Miscellaneous"
 choice
   depends on !TARGET_AM
@@ -215,3 +215,9 @@ config RT_CHECK
   default y
 
 endmenu
+config WATCHPOINT#单独配置
+  bool "Enable watchpoints"
+  default y
+  help
+    Enable this option to support watchpoint feature.
+
