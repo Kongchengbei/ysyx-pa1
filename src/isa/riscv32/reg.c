@@ -27,5 +27,18 @@ void isa_reg_display() {
   }
 }
 word_t isa_reg_str2val(const char *s, bool *success) {
+  //检查是否为通用寄存器
+  for (int i = 0; i < 32; i++) {
+    if (strcmp(s, regs[i]) == 0) {
+      *success = true;
+      return cpu.gpr[i];
+    }
+  }
+  //添加对pc的支持
+  if (strcmp(s, "pc") == 0) {
+    *success = true;
+    return cpu.pc;
+  }
+  *success = false;
   return 0;
 } //返回名字为s的寄存器的值，并设置success只是是否成功

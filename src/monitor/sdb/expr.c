@@ -133,6 +133,13 @@ static bool make_token(char *e) {
           tokens[nr_token].str[substr_len] = '\0';
           nr_token++;
           break;
+          case TK_REG:
+          tokens[nr_token].type = rules[i].token_type;
+          
+          strncpy(tokens[nr_token].str, substr_start + 1, substr_len - 1); //寄存器名不包括$
+          tokens[nr_token].str[substr_len - 1] = '\0';
+          nr_token++;
+          break;
         default:
           tokens[nr_token].type = rules[i].token_type;
           tokens[nr_token].str[0] = '\0';
@@ -212,7 +219,7 @@ static word_t eval(int p, int q, bool *success) {
     if (t.type == TK_HEX)
       return strtoul(t.str, NULL, 16);
     if (t.type == TK_REG)
-      return isa_reg_str2val(t.str + 1, success);
+      return isa_reg_str2val(t.str, success);
     *success = false;
     return 0;
   }
