@@ -52,7 +52,10 @@ static int cmd_c(char *args) {
   return 0;
 }
 
-static int cmd_q(char *args) { return -1; }
+static int cmd_q(char *args) { 
+  nemu_state.state = NEMU_QUIT; //设置nemu的状态为退出
+  return -1;//q报错的直接原因
+ }
 
 static int cmd_help(char *args);
 
