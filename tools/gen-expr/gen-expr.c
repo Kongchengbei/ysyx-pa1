@@ -30,9 +30,43 @@ static char *code_format =
 "  printf(\"%%u\", result); "
 "  return 0; "
 "}";
+//TODO:递归实现
+static void gen_rand_num(){
+  int num = rand() % 10000;
+  char temp[16];
+  sprintf(temp, "%d", num);
+  strcat(buf, temp);//在原buf右侧加temp
 
+}
+static void gen_rand_op(){
+  const char ops[] = "+-*/";
+  char op = ops[rand() % 4];
+  int len = strlen(buf);//计算长度，+1放到数后面
+  buf[len] = op;
+  buf[len + 1] = '\0';
+}
+static void gen_rand_expr_rec(int depth) {
+  if (depth > 9) {
+    gen_rand_num();
+    return;//输出最后一项后直接返回
+  }
+  int type = rand() % 3;
+  if (type == 0 ){
+    gen_rand_num();
+  } else if (type == 1) {
+    strcat(buf, "(");
+    gen_rand_expr_rec(depth + 1);
+    strcat(buf, ")");
+  }
+  else {
+    gen_rand_expr_rec(depth + 1);//先递归生成一个左操作数
+    gen_rand_op();
+    gen_rand_expr_rec(depth + 1);//有运算符之后生成右操作数
+  }
+}
 static void gen_rand_expr() {
-  buf[0] = '\0';
+  buf[0] = '\0';//清空
+  gen_rand_expr_rec(0);
 }
 
 int main(int argc, char *argv[]) {

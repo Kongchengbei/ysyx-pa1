@@ -51,7 +51,16 @@ static int cmd_c(char *args) {
   cpu_exec(-1);
   return 0;
 }
-
+/*首先，通过make的报错，38行显示的是，我执行了$(NEMU_EXEC)，
+而这个命令返回了非 0 的退出码，所以 make 报错，然后，我就去看了一眼nemu-main（）
+其中，return is_exit_status_bad();有这一句代码，于是我就去grep了一下，
+对于这个函数写在了哪里，发现了这个地方，
+src/utils/state.c:20:int is_exit_status_bad()
+然后我就进去，
+看到他的描述是，关于end和quit的状态来返回值，
+也就是证明报错的意义是我并非传递的信息是正常的结束或者正常的退出，
+所以才会报错，然后就回到了sdb.c里面去看我的cmd_q，这里就发现了，
+对于cmd_q是直接return的-1，所以说并没有把quit这个状态传递给nemu_state*/
 static int cmd_q(char *args) { 
   nemu_state.state = NEMU_QUIT; //设置nemu的状态为退出
   return -1;//q报错的直接原因
