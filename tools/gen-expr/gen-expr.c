@@ -30,23 +30,47 @@ static char *code_format =
 "  printf(\"%%u\", result); "
 "  return 0; "
 "}";
+static int is_zero_expr(const char *s){//判断字符串是不是表达式(……0……)
+  //除前后空格
+  while (*s == ' ')
+    s++;
+  int len = stelen(s);
+  while (len>0 && isspace(s[len-1]))
+    len --;
+  if (s[0] == '(' && s[len-1] == ')'){
+    char inner [65536];
+    strncpy(inner , s+1 ,len-2);
+    inner[len-2] = '\0';
+    return is_zero_expr(inner);
+
+  }
+return (len ==1 && s[0] == '0');//最后单个 0 
+}
+static void gen_operand (int depth, char op, int is_right){
+  int old_lend = strlen(buf);
+  do {
+    buf[old_len] = '\0'; //清除上次的右操作数
+    gen_rand_expr_rec(depth+1);
+  }while (is_right && op == '/' &&is_zero_expr(buf+old_len));
+}
 //TODO:递归实现
 static void gen_rand_num(){
-  int num = rand() % 10000;
+  int num = rand() % 100;
   char temp[16];
   sprintf(temp, "%d", num);
   strcat(buf, temp);//在原buf右侧加temp
 
 }
-static void gen_rand_op(){
+static char gen_rand_op(){
   const char ops[] = "+-*/";
   char op = ops[rand() % 4];
   int len = strlen(buf);//计算长度，+1放到数后面
   buf[len] = op;
   buf[len + 1] = '\0';
+  return op;//为判断除0
 }
 static void gen_rand_expr_rec(int depth) {
-  if (depth > 9) {
+  if (depth > 4) {
     gen_rand_num();
     return;//输出最后一项后直接返回
   }
@@ -59,9 +83,12 @@ static void gen_rand_expr_rec(int depth) {
     strcat(buf, ")");
   }
   else {
-    gen_rand_expr_rec(depth + 1);//先递归生成一个左操作数
-    gen_rand_op();
-    gen_rand_expr_rec(depth + 1);//有运算符之后生成右操作数
+    //左操作数
+    gen_operand(depth , 0,0);
+    //运算符号
+    char op =gen_rand_op();
+    //右操作数，如果是除法会通过gen排除所有0情况
+    gen_operand(depth,op,1);
   }
 }
 static void gen_rand_expr() {

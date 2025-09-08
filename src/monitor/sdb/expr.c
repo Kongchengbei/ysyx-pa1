@@ -93,7 +93,7 @@ typedef struct token {
 } Token;        // Token变量
 // token[i].type --token的第i段的类型
 
-static Token tokens[32] __attribute__((used)) = {};
+static Token tokens[1000] __attribute__((used)) = {};//长度过短，修改
 static int nr_token __attribute__((used)) = 0;
 
 static bool make_token(char *e) {
@@ -107,13 +107,20 @@ static bool make_token(char *e) {
     //正则匹配，使用每一条规则来拆分字符串，生成tokens
     /* Try all rules one by one. */
     for (i = 0; i < NR_REGEX; i++) { // NR_REGEX:规则总数
+      Log("pos=%d, str=%s\n", position, e+position);
       if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 &&
           pmatch.rm_so == 0) {
-        char *substr_start = e + position;
-        int substr_len = pmatch.rm_eo;
+      int substr_len = pmatch.rm_eo;
+      if (substr_len == 0) {
+        // 防止卡死，至少前进一步
+        position++;
+        break;
+      } 
 
-        Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s", i,
-            rules[i].regex, position, substr_len, substr_len, substr_start);
+        char *substr_start = e + position;
+
+        Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s, position: %d", i,
+            rules[i].regex, position, substr_len, substr_len, substr_start, position + substr_len);
 
         position += substr_len;
 
@@ -133,7 +140,7 @@ static bool make_token(char *e) {
           tokens[nr_token].str[substr_len] = '\0';
           nr_token++;
           break;
-          case TK_REG:
+        case TK_REG:
           tokens[nr_token].type = rules[i].token_type;
           
           strncpy(tokens[nr_token].str, substr_start + 1, substr_len - 1); //寄存器名不包括$
@@ -153,30 +160,28 @@ static bool make_token(char *e) {
       }
     }
 
+
     if (i == NR_REGEX) {
       printf("no match at position %d\n%s\n%*.s^\n", position, e, position, "");
       return false;
     }
+
+
   }
 
   return true;
 }
 //判断tokens[p…q]是否被一对最外层的括号包裹
-static bool check_parentheses(int p, int q) {
-  if (tokens[p].type != TK_LP || tokens[q].type != TK_RP)
+bool check_parentheses(int p, int q) {
+  if (tokens[p].type != TK_LP || tokens[q].type != TK_RP) 
     return false;
-
-  int balance = 0;
-  for (int i = p + 1; i < q; i++) {
-    if (tokens[i].type == TK_LP)
-      balance++;
-    else if (tokens[i].type == TK_RP) {
-      if (balance == 0)
-        return false;
-      balance--;
-    }
+  int count = 0;
+  for (int i = p; i <= q; i++) {
+    if (tokens[i].type == TK_LP) count++;
+    if (tokens[i].type == TK_RP) count--;
+    if (count == 0 && i < q) return false; // 说明括号提前闭合
   }
-  return balance == 0;
+  return count == 0;
 }
 //运算符优先级定义，数值越小，优先级约低
 static int get_priority(int type) {
@@ -200,32 +205,38 @@ static int get_priority(int type) {
   }
 }
 
-static bool
-is_unary_context(int prev_type) { //是否为一元运算,prev_type--tokens[i-1].type
+static bool is_unary_context(int prev_type) { //是否为一元运算,prev_type--tokens[i-1].type
   return prev_type == TK_PLUS || prev_type == TK_MINUS || prev_type == TK_MUL ||
          prev_type == TK_DIV || prev_type == TK_EQ || prev_type == TK_NEQ ||
          prev_type == TK_AND || prev_type == TK_LP;
 }
 
+
 static word_t eval(int p, int q, bool *success) {
+  if (check_parentheses(p, q)) {
+    return eval(p + 1, q - 1, success);
+  }
   if (p > q) {
     *success = false;
     return 0;
   }
   if (p == q) {
     Token t = tokens[p];
-    if (t.type == TK_DEC)
+    if (t.type == TK_DEC){
+      *success = true;
       return strtoul(t.str, NULL, 10);
-    if (t.type == TK_HEX)
+    }
+    if (t.type == TK_HEX){
+      *success = true;
       return strtoul(t.str, NULL, 16);
-    if (t.type == TK_REG)
+    }
+    if (t.type == TK_REG){
       return isa_reg_str2val(t.str, success);
+    }
     *success = false;
     return 0;
   }
-  if (check_parentheses(p, q)) {
-    return eval(p + 1, q - 1, success);
-  }
+
   int op = -1;
   int min_pri = 9999;  //对应优先级最低
   int paren_depth = 0; //括号的层数
@@ -289,7 +300,10 @@ static word_t eval(int p, int q, bool *success) {
 
   return 0;
 }
-word_t expr(char *e, bool *success) {
+// word_t expr(char *e, bool *success) {
+word_t expr(char *e , bool *success) {
+  
+ // char *e = "(((((((87/88*(44)))))/38/46-((93+86))+2)))";
 
   if (!make_token(e)) {
     *success = false;
