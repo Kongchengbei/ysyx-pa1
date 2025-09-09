@@ -43,7 +43,7 @@ while (fgets(line, sizeof(line), fp)){
     pass ++;
     printf("PASS %s= %u\n", expr_buf,result);
   }else {
-    printf("FALSE %s, expect %u, but restlt %u \n", expr_buf, expected,result);
+    printf("FALSE %s, expect %u, but result %u \n", expr_buf, expected,result);
     break;
   }
 }

@@ -19,6 +19,7 @@
 #include <time.h>
 #include <assert.h>
 #include <string.h>
+#include <ctype.h> //isspace
 
 // this should be enough
 static char buf[65536] = {};
@@ -30,11 +31,15 @@ static char *code_format =
 "  printf(\"%%u\", result); "
 "  return 0; "
 "}";
+// 前置声明（避免隐式声明问题）
+static void gen_rand_expr_rec(int depth);
+static int is_zero_expr(const char *s);
+
 static int is_zero_expr(const char *s){//判断字符串是不是表达式(……0……)
   //除前后空格
   while (*s == ' ')
     s++;
-  int len = stelen(s);
+  int len = strlen(s);
   while (len>0 && isspace(s[len-1]))
     len --;
   if (s[0] == '(' && s[len-1] == ')'){
@@ -49,9 +54,9 @@ return (len ==1 && s[0] == '0');//最后单个 0
 static void gen_operand (int depth, char op, int is_right){
   int old_lend = strlen(buf);
   do {
-    buf[old_len] = '\0'; //清除上次的右操作数
+    buf[old_lend] = '\0'; //清除上次的右操作数
     gen_rand_expr_rec(depth+1);
-  }while (is_right && op == '/' &&is_zero_expr(buf+old_len));
+  }while (is_right && op == '/' &&is_zero_expr(buf+old_lend));
 }
 //TODO:递归实现
 static void gen_rand_num(){
@@ -120,8 +125,8 @@ int main(int argc, char *argv[]) {
     fp = popen("/tmp/.expr", "r");
     assert(fp != NULL);
 
-    int result;
-    ret = fscanf(fp, "%d", &result);
+    unsigned result;//与生成一致
+    ret = fscanf(fp, "%u", &result);
     pclose(fp);
 
     printf("%u %s\n", result, buf);
