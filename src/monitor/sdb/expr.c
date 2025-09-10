@@ -212,7 +212,7 @@ static bool is_unary_context(int prev_type) { //是否为一元运算,prev_type-
 }
 
 
-static word_t eval(int p, int q, bool *success) {
+static int eval(int p, int q, bool *success) {
   if (check_parentheses(p, q)) {
     return eval(p + 1, q - 1, success);
   }
@@ -257,8 +257,8 @@ static word_t eval(int p, int q, bool *success) {
     *success = false;
     return 0;
   }
-  word_t num1 = 0;
-  word_t num2 = 0; //两个存放操作数变量,分别为符号的左右两侧数，12从左到右
+  int num1 = 0;
+  int num2 = 0; //两个存放操作数变量,分别为符号的左右两侧数，12从左到右
 
   if (tokens[op].type == TK_NEG || tokens[op].type == TK_DEREF) {
     //只有一个操作数的时候（-、解引用）
@@ -269,6 +269,7 @@ static word_t eval(int p, int q, bool *success) {
       return -num2;
     if (tokens[op].type == TK_DEREF) //符号是*（解引用）
       return vaddr_read(num2, 4);    //取四字节
+ 
 
   } else {
     //左右两边都有操作数
@@ -301,7 +302,7 @@ static word_t eval(int p, int q, bool *success) {
   return 0;
 }
 // word_t expr(char *e, bool *success) {
-word_t expr(char *e , bool *success) {
+int expr(char *e , bool *success) {
   
  // char *e = "(((((((87/88*(44)))))/38/46-((93+86))+2)))";
 
