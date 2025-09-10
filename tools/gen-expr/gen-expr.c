@@ -33,8 +33,8 @@ static char *code_format =
 "}";
 // 前置声明（避免隐式声明问题）
 static void gen_rand_expr_rec(int depth);
-static int is_zero_expr(const char *s);
-
+//static int is_zero_expr(const char *s);
+/*
 static int is_zero_expr(const char *s){//判断字符串是不是表达式(……0……)
   //除前后空格
   while (*s == ' ')
@@ -50,23 +50,24 @@ static int is_zero_expr(const char *s){//判断字符串是不是表达式(…�
 
   }
 return (len ==1 && s[0] == '0');//最后单个 0 
-}
+}*/ 
+//这样的话隐藏除数0还是会出问题，保留之前的成果，直接强制再gen_operand中筛查全部的除零
 static void gen_operand (int depth, char op, int is_right){
-  int old_lend = strlen(buf);
+  int old_len = strlen(buf);
   do {
-    buf[old_lend] = '\0'; //清除上次的右操作数
+    buf[old_len] = '\0'; //清除上次的右操作数
     gen_rand_expr_rec(depth+1);
-  }while (is_right && op == '/' &&is_zero_expr(buf+old_lend));
+  }while (is_right && op == '/' && (buf[old_len] == '0' || atoi(buf + old_len) == 0));//如果除数为0 ，重新生成
 }
 //TODO:递归实现
-static void gen_rand_num(){
+static void gen_rand_num(){//随机数
   int num = rand() % 100;
   char temp[16];
   sprintf(temp, "%d", num);
   strcat(buf, temp);//在原buf右侧加temp
 
 }
-static char gen_rand_op(){
+static char gen_rand_op(){//随机运算符
   const char ops[] = "+-*/";
   char op = ops[rand() % 4];
   int len = strlen(buf);//计算长度，+1放到数后面
